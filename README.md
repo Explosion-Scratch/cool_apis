@@ -109,8 +109,18 @@ function rewrite(text) {
 }
 ```
 
-### Get parts of speech of some text
+### Get parts of speech of text
 ```js
+/**
+* Gets parts of speech for a sentence
+* @param {String} text The text to get parts of speech for.
+* @returns {Promise.<Object>} Resolves into a list of parts of speech. (Or rejects with an error)
+* @example 
+* var parts_of_speech  = await parts_of_speech("Sometimes I just want to code in JavaScript all day.");
+* // ⇒
+* // {entities: Array(1), sentiments: Array(1), documentInfo: {…}, wordFreq: Array(4), taggedText: '<span class="tag ADV">Sometimes</span> <span class…>all</span> <span class="tag DURATION">day</span>'}
+function parts_of_speech(text) {
+*/
 function parts_of_speech(text) {
   return new Promise(async (resolve, reject) => {
     fetch("https://showcase-serverless.herokuapp.com/pos-tagger", {
@@ -118,12 +128,38 @@ function parts_of_speech(text) {
         accept: "application/json",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ sentence: "Hello world" }),
+      body: JSON.stringify({ sentence: text }),
       method: "POST",
     })
       .then((res) => res.json())
       .then(resolve)
       .catch(reject);
   });
+}
+```
+
+### Get quizlet flashcards
+```js
+/**
+* Gets a list of terms from a quizlet set
+* @param {String} id The id of the quizlet set.
+* @returns {Promise.<String[]>} Resolves into a list of terms and definitions. (Or rejects with an error)
+* @example 
+* var terms  = await quizlet("213648175");
+*/
+async function quizlet(id){
+    let res = await fetch(`https://quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=1`).then(res => res.json())
+    let currentLength = 5;
+    let token = res.responses[0].paging.token
+    let terms = res.responses[0].models.studiableItem;
+    let page = 2;
+    console.log({token, terms})
+    while (currentLength >= 5){
+        let res = await fetch(`https://quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=${page++}&pagingToken=${token}`).then(res => res.json());
+        terms.push(...res.responses[0].models.studiableItem);
+        currentLength = res.responses[0].models.studiableItem.length;
+        token = res.responses[0].paging.token;
+    }
+    return terms;
 }
 ```
