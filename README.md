@@ -170,3 +170,11 @@ async function grammar(text){
 	let res = await fetch("https://services.gingersoftware.com/Ginger/correct/jsonSecured/GingerTheTextFull?callback=$&text=They+dont+knowledge+where+tom+waent&apiKey=GingerWebsite&clientVersion=2.0&lang=US").then(res => res.text())
 	return JSON.parse(res.replace(/^$\(/, "").replace(/);?$/, ""));//Returns a 'callback'
 }
+```
+
+### Google autocomplete API
+```js
+async function autocomplete(text){
+	return JSON.parse(await fetch("https://www.google.com/complete/search?q=testing&client=Firefox").then(res => res.text()))[1];
+}
+```
