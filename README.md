@@ -163,3 +163,10 @@ async function quizlet(id){
     return terms;
 }
 ```
+
+### Grammar check API
+```js
+async function grammar(text){
+	let res = await fetch("https://services.gingersoftware.com/Ginger/correct/jsonSecured/GingerTheTextFull?callback=$&text=They+dont+knowledge+where+tom+waent&apiKey=GingerWebsite&clientVersion=2.0&lang=US").then(res => res.text())
+	return JSON.parse(res.replace(/^$\(/, "").replace(/);?$/, ""));//Returns a 'callback'
+}
