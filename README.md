@@ -1,9 +1,6 @@
 # Cool apis
 A collection of implementations to scrape APIs of popular websites.
 
-# Text processing
-Translation, rewriting and (soon) more!
-
 ### Translate text (translate.google.com)
 ```js
 /**
@@ -178,3 +175,30 @@ async function autocomplete(text){
 	return JSON.parse(await fetch("https://www.google.com/complete/search?q=testing&client=Firefox").then(res => res.text()))[1];
 }
 ```
+
+### Search CDNJS
+```js
+async function cdnjs(query){
+	return await fetch("https://2qwlvlxzb6-2.algolianet.com/1/indexes/*/queries", {
+		headers: {
+		  accept: "*/*",
+		  "content-type": "application/x-www-form-urlencoded",
+		  "x-algolia-api-key": `2663c73014d2e4d6d1778cc8ad9fd010`,
+		  "x-algolia-application-id": `2QWLVLXZB6`,
+		},
+		body: JSON.stringify({
+		  requests: [{ indexName: "libraries", params: e`query=${q}` }],
+		}),
+		method: "POST",
+	      })
+		.then((res) => res.json())
+		.then((res) => {
+		  let results = res.results[0].hits;
+		  return results.map((item) => ({
+		    name: item.name,
+		    keywords: item.keywords,
+		    snippet: item.description,
+		    author: item.author,
+		  }));
+		});
+}
