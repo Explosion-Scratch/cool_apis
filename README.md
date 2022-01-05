@@ -144,15 +144,15 @@ function parts_of_speech(text) {
 * @example 
 * var terms  = await quizlet("213648175");
 */
-async function quizlet(id){
-    let res = await fetch(`https://quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=1`).then(res => res.json())
+async function quizlet(id, cors = 'https://cors.explosionscratc.repl.co/'){
+    let res = await fetch(`${cors}quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=1`).then(res => res.json())
     let currentLength = 5;
     let token = res.responses[0].paging.token
     let terms = res.responses[0].models.studiableItem;
     let page = 2;
     console.log({token, terms})
     while (currentLength >= 5){
-        let res = await fetch(`https://quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=${page++}&pagingToken=${token}`).then(res => res.json());
+        let res = await fetch(`${cors}quizlet.com/webapi/3.4/studiable-item-documents?filters%5BstudiableContainerId%5D=${id}&filters%5BstudiableContainerType%5D=1&perPage=5&page=${page++}&pagingToken=${token}`).then(res => res.json());
         terms.push(...res.responses[0].models.studiableItem);
         currentLength = res.responses[0].models.studiableItem.length;
         token = res.responses[0].paging.token;
@@ -163,9 +163,51 @@ async function quizlet(id){
 
 ### Grammar check API
 ```js
+/**
+ * @param {String} text The text to check
+ * @returns {Promise.<Object>}
+ * @example
+ *  // ⇒ {
+ *  //   "Corrections": [...],
+ *  //   "Sentences": [...]
+ *  //}
+ */
 async function grammar(text){
-	let res = await fetch("https://services.gingersoftware.com/Ginger/correct/jsonSecured/GingerTheTextFull?callback=$&text=They+dont+knowledge+where+tom+waent&apiKey=GingerWebsite&clientVersion=2.0&lang=US").then(res => res.text())
-	return JSON.parse(res.replace(/^$\(/, "").replace(/);?$/, ""));//Returns a 'callback'
+	let res = await fetch(`https://services.gingersoftware.com/Ginger/correct/jsonSecured/GingerTheTextFull?callback=$&text=${encodeURIComponent(text)}&apiKey=GingerWebsite&clientVersion=2.0&lang=US`).then(res => res.text())
+	return JSON.parse(res.replace(/^\$\(/, "").replace(/\);?$/, ""));//Returns a 'callback'
+}
+```
+
+### Another grammar checker API (cram.com)
+```js
+function checkGrammar(text){
+    const opts = {
+        headers: {
+            "accept": "application/vnd.splat+json",
+        }
+    }
+    return new Promise(async (resolve) => {
+        let job = await fetch("https://api.cram.com/article-evaluations", {
+          "body": JSON.stringify({
+              "text": text,
+              "evaluate":["grammar","plagiarism"]
+          }),
+          "method": "POST",
+          ...opts,
+        }).then(res => res.json())
+        let int = setInterval(async () => {
+            let res = await fetch(`https://api.cram.com/article-evaluations/${job.data.id}`, {
+              "headers": {
+                "accept": "application/vnd.splat+json",
+              },
+              "method": "GET",
+            }).then(res => res.json())
+            if (res.data.is_success === 1){
+                clearInterval(int);
+                return resolve(res.data.result);
+            }
+        }, 500)
+    });
 }
 ```
 
