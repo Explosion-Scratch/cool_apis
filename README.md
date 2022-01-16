@@ -64,8 +64,8 @@ async function translate(text, target, source, proxy) {
 * //    "It's not uncommon for me to just want to code in JavaScript all day.",
 * //    "My favorite thing to do sometimes is just code JavaScript all day.",
 * //    "My favourite coding language is JavaScript, which I can code all day.",
-*//     "JavaScript is my preferred language sometimes, since it lets me code all day.",
-*// ];
+* //     "JavaScript is my preferred language sometimes, since it lets me code all day.",
+* // ];
 */
 function rewrite(text) {
   return new Promise(async (resolve, reject) => {
