@@ -244,3 +244,48 @@ async function cdnjs(query){
 		  }));
 		});
 }
+```
+
+### Search a notion space
+```js
+/**
+* Searches a notion space for a query
+* @param {String} thing The search query
+* @param {String} space The notion space ID to search (localStorage.ajs_group_id on notion)
+* @returns {Promise.<Object[]>} Returns a promise that resolves into an array of results
+*/
+async function search(thing, space, cors = `https://cors.explosionscratc.repl.co/`){
+    console.log(id(space));
+    let body = {
+        type: "BlocksInSpace",
+        query: thing,
+        spaceId: id(space),
+        limit: 5,
+        filters: {
+            isDeletedOnly: false,
+            excludeTemplates: false,
+            isNavigableOnly: false,
+            requireEditPermissions: false,
+            ancestors: [],
+            createdBy: [],
+            editedBy: [],
+            lastEditedTime: {},
+            createdTime: {},
+        },
+        sort: "Relevance",
+        source: "quick_find",
+    };
+    let {results} = await fetch(`${cors}www.notion.so/api/v3/search`, {
+        headers: {"Content-Type": "application/json; charset=UTF-8"},
+        body: JSON.stringify(body),  
+        method: "POST",
+    }).then(res => res.json());
+    return results;
+
+    function id(notactualuuid) {
+        let lengths = [8, 4, 4, 4, 12];
+        let re = new RegExp(lengths.map(i => `([a-zA-F0-9]{${i}})`).join(""));
+        return notactualuuid.match(re).slice(1).join("-")
+    }
+}
+```
