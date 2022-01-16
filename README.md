@@ -243,14 +243,54 @@ function checkGrammar(text){
 /**
 * Autocompletes text using Google's autocomplete engine
 * @param {String} text The text to autocomplete
+* @returns {Promise.<Array>} Returns a promise which resolves into the autocompletions
+* @example
+* await autocomplete("JavaScript ");
+* // ⇒ [
+* //     "javascript map",
+* //     "javascript snake",
+* //     "javascript for loop",
+* //     "javascript foreach",
+* //     "javascript array",
+* //     "javascript substring",
+* //     "javascript reduce",
+* //     "javascript download",
+* //     "javascript filter",
+* //     "javascript set"
+* // ]
 */
-async function autocomplete(text){
-	return JSON.parse(await fetch("https://www.google.com/complete/search?q=testing&client=Firefox").then(res => res.text()))[1];
+async function autocomplete(text, cors = 'https://cors.explosionscratc.repl.co/'){
+	return JSON.parse(await fetch(`${cors}www.google.com/complete/search?q=${encodeURIComponent(text)}&client=Firefox`).then(res => res.text()))[1];
 }
 ```
 
 ### Search CDNJS
 ```js
+/**
+* Searches CDNJS for a particular library
+* @param {String} query The query to search for
+* @returns {Promise.<Object[]>} Returns an array of libraries in the form of objects
+* @example
+* await cdnjs("bijou");
+* // ⇒ [
+* //     {
+* //         "name": "Bijou.js",
+* //         "keywords": [
+* //             "bijou",
+* //             "javascript",
+* //             "library",
+* //             "functions",
+* //             "useful",
+* //             "elegant"
+* //         ],
+* //         "snippet": "Useful JS snippets, in one simple library",
+* //         "author": "Explosion Implosion <explosionscratch@gmail.com> (https://github.com/explosion-scratch)"
+* //     }
+* // ]
+* 
+* await cdnjs("vue");
+* // ⇒ [See full response at https://gist.github.com/Explosion-Scratch/36e4b19353ce06f7ab2dffad07feb045]
+*/
 async function cdnjs(query){
 	return await fetch("https://2qwlvlxzb6-2.algolianet.com/1/indexes/*/queries", {
 		headers: {
@@ -260,7 +300,7 @@ async function cdnjs(query){
 		  "x-algolia-application-id": `2QWLVLXZB6`,
 		},
 		body: JSON.stringify({
-		  requests: [{ indexName: "libraries", params: e`query=${q}` }],
+		  requests: [{ indexName: "libraries", params: `query=${encodeURIComponent(query)}` }],
 		}),
 		method: "POST",
 	      })
