@@ -289,3 +289,90 @@ async function search(thing, space, cors = `https://cors.explosionscratc.repl.co
     }
 }
 ```
+
+### Convertio API
+```js
+/* Usage */
+/**
+* Converts a file to a given format
+* @param {File} file A JS file object to convert
+* @param {Object} opts The options object
+* @param {String} [opts.content=base64Encode(file)] The base64 encoded file content to convert. Inferred from the file object passed
+* @param {String} opts.output The output format to convert to
+* @param {Array.<String>} opts.apiKeys The apiKeys to convert with (selected randomly from the array)
+* @param {String} [opts.filename=file.name] The name of the file. Inferred from the name of the file passed.
+*/
+function convert(file, opts){
+  return new Promise((resolve, reject) => {
+    let reader = new FileReader();
+    reader.readAsDataURL(file);
+    await new Promise(res => (reader.onload = res));
+    let content = reader.result.split(";base64,")[1];
+    let conversion = new Conversion({filename: file.name, content, output: type, ...opts});
+    conversion.run().then(resolve).catch(reject);
+  });
+}
+
+class Conversion {
+    constructor({content, filename, output, apiKeys}) {
+        Object.assign(this, {
+            content,
+            filename,
+            output,
+            apiKeys,
+        });
+    }
+    async run() {
+        await this.start();
+        return new Promise(res=>{
+            let int = setInterval(async()=>{
+                try {
+                await this.getStatus();
+                } catch(e){throw e};
+                if (this.url) {
+                    window.clearInterval(int);
+                    res(this.url);
+                }
+            }
+            , 1000);
+        }
+        )
+    }
+    async start() {
+        let keys = this.apiKeys;
+        if (!this.apiKeys?.length){
+          throw new Error("No convertio api keys (use when initiating, get for free at https://developers.convertio.co/)");
+        }
+        let result = await fetch("https://api.convertio.co/convert", {
+            body: JSON.stringify({
+                "apikey": keys[Math.floor(Math.random() * keys.length)],
+                "input": "base64",
+                "file": this.content,
+                "filename": this.filename,
+                "outputformat": this.output,
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: "POST"
+        }).then(res=>res.json());
+        if (result.error){
+            throw new Error(result.error);
+        }
+        this.id = result.data.id;
+        return result;
+    }
+    async getStatus() {
+        let result = await fetch(`https://api.convertio.co/convert/${this.id}/status`).then(res=>res.json());
+        this.status = result;
+        if (result.status === "ok" && result.data.step === "finish") {
+            this.url = result.data.output.url;
+            this.output = result.data.output;
+        }
+        if (result.error){
+            throw new Error(result.error);
+        }
+        return result;
+    }
+}
+```
