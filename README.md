@@ -164,6 +164,7 @@ async function quizlet(id, cors = 'https://cors.explosionscratc.repl.co/'){
 ### Grammar check API
 ```js
 /**
+ * Checks the grammar of text using the Ginger grammar checker API
  * @param {String} text The text to check
  * @returns {Promise.<Object>}
  * @example
@@ -180,21 +181,47 @@ async function grammar(text){
 
 ### Another grammar checker API (cram.com)
 ```js
+/**
+* Checks the grammar of some text using the cram.com API. 
+* NOTE: There is a minimum word limit of 10 words.
+* @param {String} text The text to grammar check
+* @example
+* await checkGrammar("five words are not enough");
+* // ⇒ {
+* //  "meta": {
+* //      "statusCode": 400
+* //  },
+* //  "errors": [
+* //      {
+* //          "status": 400,
+* //          "detail": "Minimum word count criteria did not match!"
+* //      }
+* //  ]
+* //}
+* 
+* await checkGrammar("Thhis word is mispelled and I dont care. The sentence also has other, grammar, errorz")
+* // ⇒ [Response too long, see https://gist.github.com/Explosion-Scratch/7cae63ec6c9315c4eabcb8e27818a1e6]
+*/
 function checkGrammar(text){
     const opts = {
         headers: {
             "accept": "application/vnd.splat+json",
         }
     }
-    return new Promise(async (resolve) => {
-        let job = await fetch("https://api.cram.com/article-evaluations", {
+    return new Promise(async (resolve, reject) => {
+        let res = await fetch("https://api.cram.com/article-evaluations", {
           "body": JSON.stringify({
               "text": text,
               "evaluate":["grammar","plagiarism"]
           }),
           "method": "POST",
           ...opts,
-        }).then(res => res.json())
+        });
+        if (res.status !== 200){
+          return reject(await res.json())
+        } else {
+          res = await res.json();
+        }
         let int = setInterval(async () => {
             let res = await fetch(`https://api.cram.com/article-evaluations/${job.data.id}`, {
               "headers": {
@@ -213,6 +240,10 @@ function checkGrammar(text){
 
 ### Google autocomplete API
 ```js
+/**
+* Autocompletes text using Google's autocomplete engine
+* @param {String} text The text to autocomplete
+*/
 async function autocomplete(text){
 	return JSON.parse(await fetch("https://www.google.com/complete/search?q=testing&client=Firefox").then(res => res.text()))[1];
 }
@@ -374,5 +405,22 @@ class Conversion {
         }
         return result;
     }
+}
+```
+
+### Sci-hub scraping
+
+```js
+/**
+* Gets the PDF URL from a scientific article's DOI and a sci-hub domain
+* @param {String} doi A scientific article's DOI (Digital Object Identifier System)
+* @param {String} domain The hostname of a sci-hub instance.
+* @param {String} cors The cors proxy to use
+* @returns {Promise.<string>} Returns a promise which resolves into a URL of the PDF
+* @example
+*/
+async function getURL(doi, domain = 'sci-hub.st', cors = 'https://cors.explosionscratc.repl.co/') {
+  let text = await fetch(`${cors}${domain}/${doi}`).then(res => res.text())
+  return new DOMParser().parseFromString(text, "text/html").querySelector("iframe, embed").src
 }
 ```
