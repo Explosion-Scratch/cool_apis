@@ -464,3 +464,53 @@ async function getURL(doi, domain = 'sci-hub.st', cors = 'https://cors.explosion
   return new DOMParser().parseFromString(text, "text/html").querySelector("iframe, embed").src
 }
 ```
+
+### Gaugan2 AI
+```js
+/**
+* Uses the GauGAN2 Neural Network by Nvidia to transform an image
+* @param {String} data data URL of the image to transform. Must use specific colors (find them here http://gaugan.org/gaugan2/)
+* @returns {Promise.<File>} Returns a promise that resolves into a JS File Object
+* @example
+* //Create an object URL of the data and open it
+* ai(data).then(URL.createObjectURL).then(window.open) 
+*/
+async function ai(data){
+    //It works, but I'm not sure if it will in a year or whatever
+    let name = `${new Date().toLocaleDateString('en-GB')},${Date.now()}-368077302`;
+    let body = {
+        name,
+        style_name: 1,
+        caption: "",
+        enable_seg: true,
+        enable_edge: false,
+        enable_caption: false,
+        enable_image: false,
+        use_model2: false,
+        masked_segmap: encodeURIComponent(data)
+    }
+    let response = await fetch(`http://ec2-54-214-184-243.us-west-2.compute.amazonaws.com:443/gaugan2_infer`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: Object.entries(body).map(([k, v]) => `${k}=${v}`).join("&"),
+    }).then(res => res.json())
+    console.log({response});
+    if (!response.success){
+        throw new Error("Response was unsuccessful", response);
+    }
+    let blob = await fetch(`http://ec2-54-214-184-243.us-west-2.compute.amazonaws.com:443/gaugan2_receive_output`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: `name=${name}`,
+    }).then(res => res.blob());
+    console.log({blob});
+    if (!blob){
+        throw new Error("Not sure what happened, no AI output");
+    }
+    return new File([blob], "file.jpeg", {type: "image/jpeg"});
+}
+```
