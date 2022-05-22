@@ -1,6 +1,87 @@
 # Cool apis
 A collection of implementations to scrape APIs of popular websites.
 
+### Google quick answers
+```js
+/**
+ * Googles something for a quick answer, e.g. "Who is president", "What time is it in borneo", "SNL cast members", "Translate hello world to spanish"
+ * @param {String} q The question to ask
+ * @returns {Promise.<String>} A promise that resolves into a string of the answer, can also return undefined if no answer was found.
+ */
+async function answer(q) {
+  var html = await fetch(
+    `https://cors.explosionscratc.repl.co/google.com/search?q=${encodeURI(q)}`,
+    {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (X11; CrOS x86_64 13982.88.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.162 Safari/537.36",
+      },
+    }
+  ).then((res) => res.text());
+  window.d = new DOMParser().parseFromString(html, "text/html");
+  var el =
+    d.querySelector("[id*='lrtl-translation-text']") ||
+    [...d.querySelectorAll(".kp-header [data-md]")][1] ||
+    //Calculator results
+    [...d.querySelectorAll(".vXQmIe")]?.slice(-1)?.[0]?.value ||
+    [...d.querySelectorAll(".kCrYT")]?.[1] ||
+    [...d.querySelectorAll("*")]
+      .filter((i) => i.innerText)
+      .filter((i) => i.innerText.includes("Calculator Result"))
+      .slice(-2)?.[0]
+      ?.innerText?.split("\n")?.[2] ||
+    //Big text ("youtube ceo"):
+    d.querySelector(".IZ6rdc") ||
+    //Lists of stuff ("who was president during world war II")
+    // ".JjtOHd", and ".ellip" are for different arrangements, e.g. "snl cast members"
+    [...d.querySelectorAll(".WGwSK, .JjtOHd")]?.map(i => i?.innerText?.replace(i?.querySelector(".cp7THd .FozYP, .ellip")?.innerText, "")).join(", ") ||
+    //Snippets
+    [...d.querySelectorAll("div, span")]
+      .filter((i) => i.innerText)
+      .filter(
+        (i) =>
+          i.innerText.includes("Featured snippet from the web") ||
+          i.innerText.includes("Description") ||
+          i.innerText.includes("Calculator result")
+      )?.slice(-1)?.[0]?.innerText?.replace(/^(?:description|calculator result | featured snippet from the web)/i, "") ||
+    //Cards (like at the side)
+    d.querySelector(
+      ".card-section, [class*='__wholepage-card'] [class*='desc'], .kno-rdesc"
+    )?.innerText?.split("=")?.[1]?.split("(function()")?.[0]?.trim() ||
+    //Definitions
+    [...d.querySelectorAll(".thODed")]
+      .map((i) => i.querySelector("div span"))
+      .map((i, idx) => `${idx + 1}. ${i?.innerText}`)
+      .join("\n") ||
+    [...d.querySelectorAll("[data-async-token]")]?.slice(-1)?.[0] ||
+    d.querySelector("miniapps-card-header")?.parentElement ||
+    d.querySelector("#tw-target");
+  var text =
+    typeof el == "array" || typeof el == "string" ? el : el?.innerText?.trim();
+  if (text?.startsWith("Did you mean") || text?.startsWith("In order to show you the most relevant results,")){
+    return;
+  }
+  if (text?.includes("translation") && text?.includes("Google Translate")) {
+    text = text.split("Verified")[0].trim();
+  }
+  text = text?.split("();")?.slice(-1)?.[0]?.split("http")?.[0];//In case we get a script.
+  text = text?.split(/^Featured snippet from the web/)?.slice(-1)?.[0];//"define epicness"
+  text = text?.split(/Wikipedia[A-Z]/)?.[0];//Sometimes it adds random stuff to the end. This usually ends in "WikipediaRandomstuff"
+  text = text?.replace(/ Wikipedia$/, "");//Lol
+  if (
+    text?.includes("Calculator Result") &&
+    text?.includes("Your calculations and results")
+  ) {
+    text = text
+      .split("them")?.[1]
+      .split("(function()")?.[0]
+      ?.split("=")?.[1]
+      ?.trim();
+  }
+  return text;
+}
+```
+
 ### Translate text (translate.google.com)
 ```js
 /**
