@@ -7,6 +7,18 @@ A collection of implementations to scrape APIs of popular websites.
  * Googles something for a quick answer, e.g. "Who is president", "What time is it in borneo", "SNL cast members", "Translate hello world to spanish"
  * @param {String} q The question to ask
  * @returns {Promise.<String>} A promise that resolves into a string of the answer, can also return undefined if no answer was found.
+ * @example
+ * await answer("Translate hello world to spanish");
+ * // ⇒ "Hola Mundo"
+ * 
+ * await answer("What is JavaScript");
+ * // ⇒ "1. an object-oriented computer programming language commonly used to create interactive effects within web browsers."
+ * 
+ * await answer("SNL cast members");
+ * // ⇒ "Pete Davidson, Kate McKinnon, Cecily Strong, Heidi Gardner, Kenan Thompson, Colin Jost, John Mulaney, Mikey Day"
+ * 
+ * await answer("pi * 3")
+ * // ⇒ "9.42477796076938"
  */
 async function answer(q) {
   var html = await fetch(
@@ -81,6 +93,41 @@ async function answer(q) {
   return text;
 }
 ```
+
+### Create PDF of a URL
+```js
+/**
+ * Creates a PDF from a URL and some options, returns a blob.
+ * @param {String} url The URL to generate a PDF of
+ * @param {Object} options An options object
+ * @param {Boolean} options.landscape Whether to screenshot in landscape mode or portrait (default)
+ * @param {String.<A4|A5|letter|legal>} options.format The format of the page, can be "A4", "A5", "letter" or "legal"
+ */
+function pdf(url, options = {landscape: false, format: "A4"}){
+  // No cors?!
+  return fetch("https://api.html2pdf.app/v1/test", {
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "accept-language": "en-US,en;q=0.9",
+      "cache-control": "no-cache",
+      "content-type": "application/json",
+      "pragma": "no-cache",
+      "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"101\", \"Google Chrome\";v=\"101\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Chrome OS\"",
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-site",
+      "Referer": "https://html2pdf.app/",
+      "Referrer-Policy": "strict-origin-when-cross-origin"
+    },
+    "body": JSON.stringify({url, ...options}),
+    "method": "POST"
+  }).then(r => r.blob()).then(blob => new Blob([blob], {type: "application/pdf"}))
+}
+```
+
+
 
 ### Translate text (translate.google.com)
 ```js
